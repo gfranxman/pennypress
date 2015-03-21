@@ -1,0 +1,41 @@
+This should divide the a site into 4 areas
+- content
+    - sites
+    - tags
+    - nav/sections
+    - stories
+    - photos/galleries
+    - videos/galleries
+    - links/oembeds
+    - calendars
+        - events
+        - event_templates
+    - maps 
+        - places 
+        - points 
+        - regions
+    - paywall
+- community
+    - nascent users ( no authentication )
+    - users ( user, email )
+    - subscribers
+    - UGC
+        - comments
+        - photos, etc
+        - events
+        - life streams
+    - newsletters
+- curation
+    - incoming feeds
+    - outgoing feeds
+        - types, formats, policies
+- commerce
+    - products
+    - subscriptions
+    - ads/advertisers
+- plugins
+    - weather?
+    - recommendations?
+        - books, quotes
+    - reports
+    - stats
