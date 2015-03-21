@@ -130,7 +130,7 @@ class BasePublishable( BaseAuditable ):
     slug = models.SlugField(unique_for_date='pub_date', max_length=100) 
     subtitle = models.CharField( max_length=200, null=True, blank=True )
 
-    authors = models.ManyToManyField( settings.AUTH_USER_MODEL )
+    authors = models.ManyToManyField( settings.AUTH_USER_MODEL, null=True, blank=True )
     tags = models.ManyToManyField( Tag, null=True, blank=True )
 
     class Meta:
