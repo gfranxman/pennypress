@@ -432,15 +432,20 @@ class StreamType( BaseAuditable ): # rss stream, rss updates, page scrape, signa
     slug = models.SlugField()
     description = models.TextField(null=True, blank=True )
 
+
+    def __unicode__(self):
+        return self.slug
+
+
     def process_stream( self, stream ):
         from django.utils import timezone
-        import feedparser
+
+        if stream.update_policy == 'replace':
+            Item.objects.filter( stream=stream ).delete()
 
         if self.slug == "rss":
+            import feedparser
             f = feedparser.parse( stream.config )
-
-            if stream.update_policy == 'replace':
-                Item.objects.filter( stream=stream ).delete()
 
             for e in f.entries:
                 entry_guid = e.link + e.published
@@ -460,6 +465,55 @@ class StreamType( BaseAuditable ): # rss stream, rss updates, page scrape, signa
                 if not is_new:
                     print "updating", entry_guid
                 item.save()
+        elif self.slug == 'twitter':
+            import tweepy
+            # TODO: get these from the Stream.config?
+            import os
+            consumer_key = os.environ.get('FIRSTPOSTR_TWITTER_CONSUMER_KEY' )
+            consumer_secret = os.environ.get('FIRSTPOSTR_TWITTER_CONSUMER_SECRET' )
+            token = os.environ.get('FIRSTPOSTR_TWITTER_ACCESS_TOKEN' )
+            secret = os.environ.get('FIRSTPOSTR_TWITTER_ACCESS_SECRET' )
+
+            auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+            auth.set_access_token(token, secret)
+
+            # Construct the API instance
+            api = tweepy.API(
+                    auth,
+                    wait_on_rate_limit=True,
+                    wait_on_rate_limit_notify=True,
+                    timeout=60,
+                    retry_delay=2,
+            )
+
+            for s in tweepy.Cursor( api.favorites).items(3):
+                entry_guid = s.id
+                if stream.pub_policy == 'auto':
+                    item_status = 'show'
+                else:
+                    item_status = 'hide'
+
+                item, is_new = Item.objects.get_or_create( stream=stream, guid=entry_guid, defaults = {
+                    'title': "Tweet by {n} (@{s})".format( n=s.author.name,s=s.author.screen_name, ),
+                    'pub_date': timezone.now(),
+                    'slug': entry_guid,
+                    'body': s.text,
+                    #'link': 
+                    'status': item_status,
+                    'item_type': ItemType.objects.get_or_create( slug='tweet', description='tweet' )[0],
+                } )
+                if not is_new:
+                    print "updating", entry_guid
+                item.save()
+
+                tag_set = [] 
+                for hashtag in [ tag['text'] for tag in s.entities['hashtags'] ]:
+                    tag, is_new = Tag.objects.get_or_create( slug=hashtag, defaults={
+                        'parent': Tag.objects.get_or_create( slug='UNMODERATED' )[0],
+                    })
+                    tag_set.append( tag )
+                item.tags.add( *tag_set ) 
+
 
 
 class Stream( BaseAuditable ):
