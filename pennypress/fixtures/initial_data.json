@@ -1,0 +1,46 @@
+[
+{
+    "fields": {
+        "updated_date": "2015-03-21",
+        "description": "rss",
+        "created_by": null,
+        "created_date": "2015-03-21",
+        "slug": "rss",
+        "updated_by": null
+    },
+    "model": "pennypress.streamtype",
+    "pk": 1
+},
+{
+    "fields": {
+        "updated_date": "2015-03-21",
+        "status": "live",
+        "update_policy": "extend",
+        "name": "kypost",
+        "last_bad_date": null,
+        "pub_policy": "auto",
+        "notes": "",
+        "stream_type": 1,
+        "created_by": null,
+        "last_good_date": "2015-03-21T15:29:04.018Z",
+        "created_date": "2015-03-21",
+        "config": "http://www.wcpo.com/feeds/rssFeed?obfType=RSS_FEED&siteId=10015&categoryId=30944",
+        "slug": "kypost",
+        "updated_by": null
+    },
+    "model": "pennypress.stream",
+    "pk": 1
+},
+{
+    "fields": {
+        "updated_date": "2015-03-21",
+        "description": "html",
+        "created_by": null,
+        "created_date": "2015-03-21",
+        "slug": "html",
+        "updated_by": null
+    },
+    "model": "pennypress.itemtype",
+    "pk": 1
+}
+]
