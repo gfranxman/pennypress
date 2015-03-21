@@ -1,0 +1,377 @@
+from django.db import models
+from django.contrib.auth import get_user_model
+from django.conf import settings
+
+from multiselectfield import MultiSelectField
+from sets import Set
+
+
+'''
+story
+photo
+video
+link
+user
+    staffmember
+comment
+
+place-point
+    dateline
+    organization
+        school
+        business
+        government
+        church
+    park
+    field
+    pollingstation
+    polygon
+        neighborhood
+        city
+        state
+        county
+event
+tag
+section
+maplayer
+map
+product
+subscription
+device
+app
+log
+person
+    politician
+    criminal
+    businessleader
+'''
+
+class BaseAuditable( models.Model ):
+    # https://docs.djangoproject.com/en/1.7/topics/db/models/#be-careful-with-related-name
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name="%(app_label)s_%(class)s_creator")
+    created_date = models.DateField( auto_now_add=True)
+
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name="%(app_label)s_%(class)s_updater")
+    updated_date = models.DateField( auto_now=True)
+
+    class Meta:
+            abstract = True
+
+# selecting a tag implies it and every tag in its ancestry up to the root
+class Tag( BaseAuditable ):
+    slug = models.SlugField()
+    parent = models.ForeignKey( 'self', null=True, blank=True )
+
+    def __unicode__( self ):
+        if self.parent:
+            return "{p} / {s}".format( p=self.parent, s=self.slug )
+        return "/ {s}".format( p=self.parent, s=self.slug )
+        
+    def get_subtree_ids(self):
+        child_ids = [self.id]
+        children = Tag.objects.filter( parent=self )
+        for child in children:
+            child_ids.extend( child.get_subtree_ids() ) 
+        return child_ids
+
+
+
+class Nav( BaseAuditable ):
+    parent = models.ForeignKey( 'self', null=True, blank=True ) 
+    name = models.CharField( max_length=100)
+    slug = models.SlugField()
+    live  = models.NullBooleanField( null=True, blank=True, default=True )
+
+    def __unicode__(self):
+        if self.parent:
+            return unicode( self.parent ) + "/" + self.slug
+        return "/" + self.slug
+
+
+
+class Section( BaseAuditable ):
+    name = models.CharField( max_length=100 )
+    slug = models.SlugField()
+
+    included_tags = models.ManyToManyField(Tag, related_name="included_in")
+    excluded_tags = models.ManyToManyField(Tag, related_name="excluded_from")
+
+    external_rss_source = models.URLField( null=True, blank=True, help_text="Links come from this source." )
+    external_page = models.URLField( null=True, blank=True, help_text="Links to this section will redirect to this url." )
+
+    def __unicode__( self ):
+        return "[{s}]".format( s=self.name )
+
+    def get_stories(self):
+        import operator
+
+        include_ids = reduce( operator.add, [ t.get_subtree_ids() for t in self.included_tags.all() ] )
+        exclude_ids = reduce( operator.add, [ t.get_subtree_ids() for t in self.excluded_tags.all() ] )
+
+        stories = Story.objects\
+            .filter( tags__id__in = include_ids )\
+            .exclude( tags__id__in = exclude_ids )
+
+        return stories
+
+
+
+class BasePublishable( BaseAuditable ):
+    abstract = True
+    pub_date = models.DateField()
+
+    title = models.CharField( max_length=100 )
+    slug = models.SlugField() 
+    subtitle = models.CharField( max_length=200 )
+
+    authors = models.ManyToManyField( settings.AUTH_USER_MODEL )
+    tags = models.ManyToManyField( Tag, null=True, blank=True )
+
+    class Meta:
+            abstract = True
+
+    def __unicode__(self):
+        return "{t} {p}".format( t=self.title, p=self.pub_date )
+
+
+class Photo( BasePublishable ):
+    image = models.ImageField()
+
+    def __unicode__(self):
+        return "Photo: {r}".format( r=repr( self.image ) )
+
+
+class Story( BasePublishable ):
+
+    lead_photo = models.ForeignKey(Photo, null=True, blank=True)
+
+    tease = models.TextField(max_length=200, null=True, blank=True)
+    dateline = models.ForeignKey( 'Dateline', null=True, blank=True )
+    one_off_dateline = models.CharField( max_length=100, null=True, blank=True )
+    body = models.TextField(max_length=10000, null=True, blank=True)
+    footer = models.TextField(max_length=200, null=True, blank=True)
+
+
+    class Meta:
+        verbose_name_plural = 'stories'
+
+    def get_absolute_url( self ):
+        return "/stories/{y}/{m}/{d}/{s}/".format( 
+                y = self.pub_date.year,
+                m = self.pub_date.month,
+                d = self.pub_date.day,
+                s = self.pub_date.slug
+        )
+
+
+class Video( BasePublishable ):
+    video = models.URLField()
+    photo = models.ForeignKey(Photo, null=True, blank=True)
+
+    def __unicode__(self):
+        return "Video: {r}".format( r=repr( self.video ) )
+
+LINKTARGETS = ( 
+        ('_blank', 'New Window'),
+        ( '', 'Same Window' ),
+)
+class Link( BaseAuditable ):
+    url = models.URLField()
+    name = models.CharField( max_length = 100, null=True, blank=True )
+    alt_text = models.CharField( max_length = 200, null=True, blank=True )
+    target = models.CharField( choices=LINKTARGETS, max_length=50, null=True, blank=True )
+
+    def __unicode__(self):
+        return "[{n}][{u}]".format( n=self.name, u=self.url )
+
+
+#######################
+####################### Places
+#######################
+class Point( BaseAuditable ):
+    latitude = models.DecimalField(max_digits=7, decimal_places=4, null=True, blank=True )
+    longitude = models.DecimalField(max_digits=7, decimal_places=4, null=True, blank=True )
+
+    def __unicode__(self):
+        return '{{"lat": "{lat}", "lon": "{lon}"}}'.format( lat=self.latitude, lon=self.longitude )
+
+class Place( Point ):
+    name = models.CharField( max_length=80 )
+
+    def __unicode__(self):
+        return self.name
+
+
+class State( BaseAuditable ):
+    name = models.CharField( max_length=30 )
+    abbr = models.CharField( max_length=10 )
+
+    def __unicode__(self):
+        return self.name
+
+
+class County( BaseAuditable ):
+    name = models.CharField( max_length=30 )
+
+    def __unicode__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = 'counties'
+
+
+
+class City( BaseAuditable ):
+    name = models.CharField( max_length=30 )
+    county = models.ForeignKey( County )
+    state = models.ForeignKey( State )
+
+    def __unicode__(self):
+        return "{c}, {s}".format( c=self.name, s=self.state.abbr )
+
+    class Meta:
+        verbose_name_plural = 'cities'
+
+
+class ZipCode( BaseAuditable ):
+    code = models.CharField(max_length=20, null=True )
+    city = models.ForeignKey( City )
+
+    def __unicode__(self):
+        return "{c}  {z}".format( c=self.city, z=self.code )
+
+class Address( Place ):
+    addr1 = models.CharField( max_length=100, null=True, blank=True )
+    addr2 = models.CharField( max_length=100, null=True, blank=True )
+    one_off_city = models.CharField( max_length=100, null=True, blank=True )
+    one_off_state = models.CharField( max_length=30, null=True, blank=True )
+    zipcode = models.ForeignKey( ZipCode )
+
+    class Meta:
+        verbose_name_plural = 'addresses'
+
+
+class Dateline( BaseAuditable ): # has-a address
+    name = models.CharField( max_length=100, null=True, blank=True )
+    address = models.ForeignKey(Address, null=True, blank=True)
+
+    def __unicode__(self):
+        if self.name:
+            return "DATELINE -- {n}".format( n=self.name )
+        return unicode( self.address )
+
+
+class Organization( Address ):
+    name = models.CharField( max_length=30 )
+    # org types = govt, business, club, ??  is this real an Address or should is merely have an address
+
+    def __unicode__(self):
+        return self.name
+
+GRADES = (  ( -1, 'Pre-K'),
+            ( 0, 'Kindergarten'),
+            ( 1, 'First Grade' ),
+            ( 2, 'Second Grade' ),
+            ( 3, 'Third Grade' ),
+            ( 4, 'Fourth Grade' ),
+            ( 5, 'Fifth Grade' ),
+            ( 6, 'Sixth Grade' ),
+            ( 7, 'Seventh Grade' ),
+            ( 8, 'Eight Grade' ),
+            ( 9, 'HS Freshman' ),
+            ( 10, 'HS Sophomore' ),
+            ( 11, 'HS Junior' ),
+            ( 12, 'HS Senior Grade' ),
+            ( 13, 'Freshman' ),
+            ( 14, 'Sophomore' ),
+            ( 15, 'Junior' ),
+            ( 16, 'Senior' ),
+            ( 17, 'Associates' ),
+            ( 18, 'Bachellors' ),
+            ( 19, 'Masters' ),
+            ( 20, 'Doctorate' ),
+        )
+
+class School( Organization ):
+    grades = MultiSelectField( choices = GRADES )
+    sports = models.ManyToManyField( 'Sport', null=True, blank=True )
+
+
+class Park( Address ):
+    name = models.CharField( max_length=100 )
+    sports = models.ManyToManyField( 'Sport', null=True, blank=True )
+
+    def __unicode__(self):
+        return "{n} {z}".format( n=self.name, z=self.zipcode )
+
+
+DENOMINATIONS = ( ( 'christian', 'Christian' ),
+                    ( 'satanic', 'Satanic' ),
+        )
+class Church( Organization ):
+    denomination = models.CharField( choices = DENOMINATIONS, max_length=20, null=True, blank=True )
+
+    class Meta:
+        verbose_name_plural = 'churches'
+
+
+class PollingStation( Address ):
+    hours = models.TextField()
+    description = models.TextField()
+    # are they tied to zipcodes that they serve?
+
+
+class Sport( BaseAuditable ):
+    name = models.CharField( max_length=100)
+    slug = models.SlugField()
+
+    def __unicode__(self):
+        return repr(self.slug)
+
+
+class EventTemplate( BaseAuditable ):
+    name = models.CharField( max_length=100)
+    slug = models.SlugField( 'name' )
+    description = models.TextField( null=True, blank=True )
+
+    organization = models.ForeignKey( Organization, null=True, blank=True, related_name="eventtemplates" )
+    address = models.ForeignKey(Address, null=True, blank=True, related_name="eventtemplates_for_this_address" )
+    one_off_address = models.TextField( null=True, blank=True )
+
+    start_time = models.TimeField( null=True, blank=True)
+    duration = models.DecimalField( max_digits=5, decimal_places=2, help_text='Hours') # end_time = models.TimeField( null=True, blank=True)
+
+    start_date = models.DateField( null=True, blank=True)
+    end_date = models.DateField( null=True, blank=True)
+
+    repeat_expression = models.CharField( max_length=100, null=True, blank=True, help_text='''Use the days of the Week or other expressions like:
+        weekly style:
+            Monday
+            Monday, Wednesday, Friday
+        monthly style:
+            first Sunday
+            last friday
+            biweekly wednesdays
+    ''' )
+
+    def __unicode__(self):
+        return "{o} {n} {r}".format( o=self.organization, n=self.name, r=self.repeat_expression ) 
+
+
+class Event( BaseAuditable ):
+    name = models.CharField( max_length=100)
+    description = models.TextField( null=True, blank=True )
+    eventtemplate = models.ForeignKey( EventTemplate, null=True, blank=True )
+
+    starts = models.DateTimeField()
+    ends = models.DateTimeField( null=True, blank=True )
+
+    organization = models.ForeignKey( Organization, null=True, blank=True, related_name="events" )
+    address = models.ForeignKey(Address, null=True, blank=True, related_name="events_at_this_address" )
+    one_off_address = models.TextField( null=True, blank=True )
+
+    notes = models.TextField( null=True, blank=True )
+
+    def __unicode__(self):
+        return "{s} {n} {o}".format( o=self.organization, n=self.name, s=self.starts ) 
+

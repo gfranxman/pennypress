@@ -1,0 +1,7 @@
+section.html
+{{ section }}
+
+<hr/>
+{% for story in section.get_stories %}
+ <li>{{story}}</li>
+{% endfor %}
