@@ -612,8 +612,14 @@ class Feed( BasePublishable ):
             stream.update()
 
     @property
-    def visible_feeditems(self):
+    def visible_feeditems(self, limit=50):
         return self.feeditem_set.filter(status='show')
+
+
+    @property
+    def published_feeditems(self, limit=50):
+        from django.utils import timezone
+        return self.feeditem_set.filter(status='show', item__pub_date__lt=timezone.now() )
 
 
 

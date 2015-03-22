@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 
 from pennypress.models import Story, Section, Event
+from pennypress.models import Feed
 
 def home(request, template="home.html" ):
  
@@ -27,5 +28,14 @@ def section( request, slug, template="section.html" ):
     return render( request, template, ctxt )
 
 
-def story_deatail( request, path, slug, template="story_detail.html" ):
+def story_detail( request, path, slug, template="story_detail.html" ):
     pass
+
+
+def feed_view( request, feed_slug, template="feed.html" ):
+    feed = Feed.objects.get( slug=feed_slug )
+    ctxt = {
+        'feed': feed,
+    }
+    print feed
+    return render( request, template, ctxt )
