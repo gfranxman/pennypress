@@ -112,33 +112,13 @@
                 <ul class="connected list no2 feed-items ui-sortable">
                     <li class="highlight drop-target">Right Now</li>
                     {% for feed_item in feed.feeditem_set.all %}
-                    <li id="{{feed_item.item.id}}">{{ feed_item.item.title }}</li>
+                    <li id="{{feed_item.item.id}}">{{ feed_item.item.title }}
+                     <div class="killit" onclick="killit(this);">X</div>
+                    </li>
                     {% endfor %}
                 </ul>
             </div>
         </div>
     </div>
 	</section>
-<!--
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-	<script src="static/jquery.sortable.js"></script>
-	<script>
-		$(function() {
-			$('.connected').sortable({
-				connectWith: '.connected'
-            });
-            $('.connected').sortable().bind('sortupdate', function(item) {
-                //Triggered when the user stopped sorting and the DOM position has changed.
-                //console.warn( "sortupdate" );
-                console.warn( "sortupdate");
-                console.warn( "item" ,item );
-                return true;
-            });
-            $('.connected').sortable().bind('start', function(e, ui) {
-                console.warn( "from ", ui.item.index() );
-	            $(this).attr("data-previndex", ui.item.index() );
-            });
-		});
-    </script>
--->
 {% endblock %}
