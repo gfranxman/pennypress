@@ -48,6 +48,17 @@
     console.warn( "adding killit" );
     ui.item.append( '<div class="killit" onclick="killit(this);">X</div>');
 
+
+    // add us to the feed on the server side
+    var sid = $(ui.item).attr('streamitem-id');
+    var sort_key = $(ui.item).attr('sort-key');
+    console.warn( "adding", sid, "to the server" );
+    $.ajax( {
+        url: 'add_streamitem/',
+        data: { streamitem_id: sid, sort_key: sort_key  },
+        success: function(){}
+    });
+ 
    }
    else if ( ui.item.parent().is('#stream-items') )
    {
@@ -85,6 +96,15 @@
     // remove us from the parent list
     var ItemContent = p.text();
     gp.find('li:contains('+ItemContent+')').remove();
+
+    // remove us from the feed on the server side
+    var fid = p.attr('feeditem-id');
+    console.warn( "removing", fid, "from the server" );
+    $.ajax( {
+        url: 'remove_feeditem/',
+        data: { feeditem_id: fid },
+        success: function(){}
+    });
   }
   
   function adjust_sort_key( e, ui ) {
@@ -109,6 +129,13 @@
           below_sk = above.attr('sort-key') - 1.0;
       }
       below_sk = parseFloat( below_sk );
+
+      if( below_sk == above_sk ) {
+          // we should update these serverside too, but this is an edge case that only exists with bad data to begin with.
+          above_sk = parseFloat("" + above_sk + "9") ;
+          below_sk = parseFloat("" + below_sk + "1") ;
+      }
+
       var new_sk = ( above_sk + below_sk ) / 2.0 ;
       var fid = ui.item.attr('feeditem-id');
       console.warn( fid, ui.item.text() );
@@ -117,7 +144,7 @@
       ui.item.attr('sort-key', new_sk) ;
       $.ajax( {
           url: 'reset_sortkey_for_feeditem/' + fid + '/',
-          data: {"sort-key": new_sk },
+          data: {"sort-key": new_sk.toPrecision(21) },
           success: function(){console.warn("saved", new_sk, "for", fid );}
       });
 
@@ -145,7 +172,7 @@
                         </table>
                     </li>
                     {% for stream_item in stream_items %}
-                    <li>{{ stream_item.title }}</li>
+                    <li streamitem-id="{{stream_item.id}}">{{ stream_item.title }}</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -153,7 +180,7 @@
                 <h2> Feed Items </h2>
                 <ul class="connected list no2 feed-items ui-sortable">
                     <li class="highlight drop-target">Right Now</li>
-                    {% for feed_item in feed.feeditem_set.all %}
+                    {% for feed_item in feed.visible_feeditems %}
                     <li feeditem-id="{{feed_item.id}}" sort-key="{{feed_item.sort_key}}">{{ feed_item.item.title }}
                      <div class="killit" onclick="killit(this);">X</div>
                     </li>

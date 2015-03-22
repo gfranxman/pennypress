@@ -37,3 +37,34 @@ def reset_sortkey_for_feeditem( request, feed_slug, feeditem_id ):
     return HttpResponse( "oops" )
 
 
+
+def remove_feeditem_from_feed( request, feed_slug ):
+    # TODO: delete it or hide it?  if we delete it, it may get re-created, 
+    try:
+        feeditem_id = request.REQUEST.get( 'feeditem_id' )
+        feeditem = FeedItem.objects.get( id=feeditem_id )
+        feeditem.status = 'hide'
+        feeditem.save()
+        return HttpResponse( "Thanks" )
+
+    except Exception, e:
+        print "oops", e
+    return HttpResponse( "oops" )
+
+def add_streamitem_to_feed( request, feed_slug ):
+    try:
+        streamitem_id = request.REQUEST.get( 'streamitem_id' )
+        sort_key = request.REQUEST.get('sort_key')
+
+        feed = Feed.objects.get( slug=feed_slug )
+        streamitem = Item.objects.get( id=streamitem_id )
+
+        feeditem, is_new = FeedItem.objects.get_or_create( feed=feed, item=streamitem )
+        feeditem.status = 'show'
+        feeditem.sort_key = sort_key
+        feeditem.save()
+        return HttpResponse( feeditem.id )
+    except Exception, e:
+        print "oops", e
+    return HttpResponse( "oops " + str(e) )
+

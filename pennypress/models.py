@@ -598,7 +598,9 @@ class Feed( BasePublishable ):
         for stream in self.streams.all():
             stream.update()
 
-
+    @property
+    def visible_feeditems(self):
+        return self.feeditem_set.filter(status='show')
 
 class FeedItem( BaseAuditable ):
     feed = models.ForeignKey( Feed )
@@ -607,5 +609,5 @@ class FeedItem( BaseAuditable ):
     status = models.CharField( max_length=10, choices=(('show','Show'),('hide','Hide')), null=True, blank=True, default="show" )
 
     class Meta:
-        unique_together= ( ('feed', 'sort_key'), )
+        #unique_together= ( ('feed', 'sort_key'), )
         ordering = [ 'feed', '-sort_key' ]
