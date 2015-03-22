@@ -4,6 +4,7 @@ from django.conf import settings
 
 from multiselectfield import MultiSelectField
 from sets import Set
+import time
 
 
 '''
@@ -473,6 +474,7 @@ class StreamType( BaseAuditable ): # rss stream, rss updates, page scrape, signa
                     for feed in stream.feed_set.all():
                         feed_item, is_new = FeedItem.objects.get_or_create( feed=feed, item=item, defaults={
                             'status': item_status,
+                            'sort_key': time.time(),
                         } )
                         if is_new:
                             feed_item.save()
@@ -519,6 +521,17 @@ class StreamType( BaseAuditable ): # rss stream, rss updates, page scrape, signa
                 else:
                     print "updating", entry_guid
                 item.save()
+
+                if stream.pub_policy == 'auto':
+                    # put it into the feeds
+                    for feed in stream.feed_set.all():
+                        feed_item, is_new = FeedItem.objects.get_or_create( feed=feed, item=item, defaults={
+                            'status': item_status,
+                            'sort_key': time.time(),
+                        } )
+                        if is_new:
+                            feed_item.save()
+
 
                 tag_set = [] 
                 for hashtag in [ tag['text'] for tag in s.entities['hashtags'] ]:
@@ -589,5 +602,10 @@ class Feed( BasePublishable ):
 
 class FeedItem( BaseAuditable ):
     feed = models.ForeignKey( Feed )
+    sort_key = models.DecimalField( max_digits=10+28, decimal_places=28 ) # really precise because the client will be dividing these down for sorting.
     item = models.ForeignKey( Item )
     status = models.CharField( max_length=10, choices=(('show','Show'),('hide','Hide')), null=True, blank=True, default="show" )
+
+    class Meta:
+        unique_together= ( ('feed', 'sort_key'), )
+        ordering = [ 'feed', '-sort_key' ]

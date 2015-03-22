@@ -22,6 +22,7 @@
    { connectWith:'.feed-items,#stream-items'
    , dropOnEmpty:true
    , receive: doPaletteMagic
+   , update: adjust_sort_key
    , cancel: ".drop-target"
    }
 
@@ -61,6 +62,7 @@
     }
 
    }
+
   }
 
   function isUsed(Content)
@@ -79,7 +81,42 @@
     var ItemContent = p.text();
     gp.find('li:contains('+ItemContent+')').remove();
   }
+  
+  function adjust_sort_key( e, ui ) {
+      console.warn( "re-keying", e, ui );
+      console.warn( ui.item.attr('sort-key') );
+      console.warn( ui.item.attr('id') ) ;
+      var sk = ui.item.attr('sort-key');
+      var above_sk = sk;
+      var below_sk = sk;
 
+      var above = ui.item.prev();
+      var below = ui.item.next();
+      if( above ) {
+          above_sk = above.attr('sort-key');
+      } else {
+          above_sk = below.attr('sort-key') + 1.0 ;
+      }
+      above_sk = parseFloat( above_sk );
+      if( below ) {
+          below_sk = below.attr('sort-key');
+          } else {
+          below_sk = above.attr('sort-key') - 1.0;
+      }
+      below_sk = parseFloat( below_sk );
+      var new_sk = ( above_sk + below_sk ) / 2.0 ;
+      var fid = ui.item.attr('feeditem-id');
+      console.warn( fid, ui.item.text() );
+
+      console.warn( fid, sk, "should be between", below_sk, 'and', above_sk, 'and is infact:', new_sk );
+      ui.item.attr('sort-key', new_sk) ;
+      $.ajax( {
+          url: 'reset_sortkey_for_feeditem/' + fid + '/',
+          data: {"sort-key": new_sk },
+          success: function(){console.warn("saved", new_sk, "for", fid );}
+      });
+
+  }
  </script>
 
                 <ul class="list">
@@ -112,7 +149,7 @@
                 <ul class="connected list no2 feed-items ui-sortable">
                     <li class="highlight drop-target">Right Now</li>
                     {% for feed_item in feed.feeditem_set.all %}
-                    <li id="{{feed_item.item.id}}">{{ feed_item.item.title }}
+                    <li feeditem-id="{{feed_item.id}}" sort-key="{{feed_item.sort_key}}">{{ feed_item.item.title }}
                      <div class="killit" onclick="killit(this);">X</div>
                     </li>
                     {% endfor %}
