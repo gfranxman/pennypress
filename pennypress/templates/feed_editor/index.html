@@ -1,0 +1,141 @@
+{% extends "bootstrap/index.html" %}
+
+{% block title %}Feed Editor{% endblock %}
+{% block h1 %}Feed Editor{% endblock %}
+
+{% block body %}
+	<section id="connected">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <h2> Stream Sources </h2>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+ <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
+ <script>
+  $j = jQuery.noConflict();
+
+  $j(document).ready(init);
+
+  function init()
+  {
+   var SortParams =
+   { connectWith:'.feed-items,#stream-items'
+   , dropOnEmpty:true
+   , receive: doPaletteMagic
+   , cancel: ".drop-target"
+   }
+
+   $j('.feed-items,#stream-items').sortable( SortParams );
+  }
+
+  function doPaletteMagic( event , ui )
+  {
+   if ( ui.sender.is('#stream-items') )
+   {
+    ui.item
+     .clone()
+     .addClass('used')
+     .appendTo('#stream-items') // put a copy back in the source
+    // TODO: fix #palette ordering
+
+    // add kill button
+    console.warn( "adding killit" );
+    ui.item.append( '<div class="killit" onclick="killit(this);">X</div>');
+
+   }
+   else if ( ui.item.parent().is('#stream-items') )
+   {
+
+    var ItemContent = ui.item.text();
+
+    ui.item.remove()
+    // remove the killit
+    console.warn("removing killit");
+    $j('#stream-items li:contains('+ItemContent+')').find('.killit').remove();
+
+    if ( ! isUsed( ItemContent ) )
+    {
+     $j('#stream-items li:contains('+ItemContent+')')
+      .removeClass('used')
+      ;
+    }
+
+   }
+  }
+
+  function isUsed(Content)
+  {
+   return ($j('.feed-items li:contains('+Content+')').length > 0)
+  }
+
+  function killit( buttondiv ) {
+    console.warn( $(buttondiv).parent() );
+    var p = $(buttondiv).parent() ; // the li
+    var gp = p.parent(); // the ul
+    // remove x
+    p.find(".killit").remove()
+
+    // remove us from the parent list
+    var ItemContent = p.text();
+    gp.find('li:contains('+ItemContent+')').remove();
+  }
+
+ </script>
+
+                <ul class="list">
+                    <li>source 1</li>
+                    {% for source in streams %}
+                    <li>{{ source.name }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h2> Stream Items </h2>
+                <ul id="stream-items" class="connected list">
+                    <li>Item 1
+                        <table>
+                            <tr>
+                                <td> tweet </td><td> bird</td>
+                            <tr>
+                            <tr>
+                                <td colspan=2>some longer text</td>
+                            </tr>
+                        </table>
+                    </li>
+                    {% for stream_item in stream_items %}
+                    <li>{{ stream_item.title }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h2> Feed Items </h2>
+                <ul class="connected list no2 feed-items ui-sortable">
+                    <li class="highlight drop-target">Right Now</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+	</section>
+<!--
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+	<script src="static/jquery.sortable.js"></script>
+	<script>
+		$(function() {
+			$('.connected').sortable({
+				connectWith: '.connected'
+            });
+            $('.connected').sortable().bind('sortupdate', function(item) {
+                //Triggered when the user stopped sorting and the DOM position has changed.
+                //console.warn( "sortupdate" );
+                console.warn( "sortupdate");
+                console.warn( "item" ,item );
+                return true;
+            });
+            $('.connected').sortable().bind('start', function(e, ui) {
+                console.warn( "from ", ui.item.index() );
+	            $(this).attr("data-previndex", ui.item.index() );
+            });
+		});
+    </script>
+-->
+{% endblock %}

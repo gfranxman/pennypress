@@ -7,6 +7,7 @@ urlpatterns = patterns('',
     # url(r'^blog/', include('blog.urls')),
 
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^feed_editor/', include('pennypress.feed_editor_urls')),
 
     # commonly requested url we dont care about
     url(r'^favicon.ico$',"project.views.go_away", name="favicon-icon-redirect"),
