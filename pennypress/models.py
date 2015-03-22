@@ -462,9 +462,21 @@ class StreamType( BaseAuditable ): # rss stream, rss updates, page scrape, signa
                     'status': item_status,
                     'item_type': ItemType.objects.get_or_create( slug='html', description='html' )[0],
                 } )
-                if not is_new:
+                if is_new:
+                    print "adding", entry_guid
+                else:
                     print "updating", entry_guid
                 item.save()
+
+                if stream.pub_policy == 'auto':
+                    # put it into the feeds
+                    for feed in stream.feed_set.all():
+                        feed_item, is_new = FeedItem.objects.get_or_create( feed=feed, item=item, defaults={
+                            'status': item_status,
+                        } )
+                        if is_new:
+                            feed_item.save()
+
         elif self.slug == 'twitter':
             import tweepy
             # TODO: get these from the Stream.config?
@@ -502,7 +514,9 @@ class StreamType( BaseAuditable ): # rss stream, rss updates, page scrape, signa
                     'status': item_status,
                     'item_type': ItemType.objects.get_or_create( slug='tweet', description='tweet' )[0],
                 } )
-                if not is_new:
+                if is_new:
+                    print "adding", entry_guid
+                else:
                     print "updating", entry_guid
                 item.save()
 
@@ -528,10 +542,16 @@ class Stream( BaseAuditable ):
     last_good_date = models.DateTimeField( null=True, blank=True )
     last_bad_date = models.DateTimeField( null=True, blank=True )
 
+    
+    def __unicode__(self):
+        return "{n}({s})".format( n=self.name, s=self.stream_type ) 
+
+
     def update( self ):
         ''' update our stream items '''
         from django.utils import timezone
         try:
+            print "{s} updating...".format( s= self ) 
             res = self.stream_type.process_stream( self )
             self.last_good_date = timezone.now()
         except Exception, e:
@@ -540,9 +560,12 @@ class Stream( BaseAuditable ):
         self.save()
 
 
+
 class ItemType( BaseAuditable ): # for parsing the item body: html, markdown, link, json, model
     slug = models.SlugField()
     description = models.TextField(null=True, blank=True )
+
+
 
 class Item( BasePublishable ):
     stream = models.ForeignKey( Stream )
@@ -553,8 +576,16 @@ class Item( BasePublishable ):
     link = models.URLField(null=True, blank=True )
     status = models.CharField( max_length=10, choices=(('show','Show'),('hide','Hide')), null=True, blank=True, default="show" )
 
+
+
 class Feed( BasePublishable ):
     streams = models.ManyToManyField( Stream, null=True, blank=True )
+
+    def update_streams(self):
+        for stream in self.streams.all():
+            stream.update()
+
+
 
 class FeedItem( BaseAuditable ):
     feed = models.ForeignKey( Feed )
