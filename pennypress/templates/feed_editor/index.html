@@ -4,7 +4,12 @@
 {% block h1 %}Feed Editor{% endblock %}
 
 {% block body %}
-	<section id="connected">
+<section id="connected">
+<ul>
+    {% for feed in all_feeds %}
+    <li><a href="{% url "feed_editor" feed.slug %}">{{feed.title}}</a></li>
+    {% endfor %}
+</ul>
     <div class="container">
         <div class="row">
             <div class="col-md-4">
