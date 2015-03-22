@@ -2,6 +2,54 @@
 {
     "fields": {
         "updated_date": "2015-03-21",
+        "updated_by": null,
+        "parent": null,
+        "created_by": null,
+        "created_date": "2015-03-21",
+        "slug": "UNMODERATED"
+    },
+    "model": "pennypress.tag",
+    "pk": 1
+},
+{
+    "fields": {
+        "updated_date": "2015-03-21",
+        "updated_by": null,
+        "parent": 1,
+        "created_by": null,
+        "created_date": "2015-03-21",
+        "slug": "radlikedad"
+    },
+    "model": "pennypress.tag",
+    "pk": 2
+},
+{
+    "fields": {
+        "updated_date": "2015-03-21",
+        "updated_by": null,
+        "parent": null,
+        "created_by": null,
+        "created_date": "2015-03-21",
+        "slug": "META"
+    },
+    "model": "pennypress.tag",
+    "pk": 3
+},
+{
+    "fields": {
+        "updated_date": "2015-03-21",
+        "updated_by": null,
+        "parent": 3,
+        "created_by": null,
+        "created_date": "2015-03-21",
+        "slug": "featured"
+    },
+    "model": "pennypress.tag",
+    "pk": 4
+},
+{
+    "fields": {
+        "updated_date": "2015-03-21",
         "description": "rss",
         "created_by": null,
         "created_date": "2015-03-21",
@@ -14,15 +62,27 @@
 {
     "fields": {
         "updated_date": "2015-03-21",
+        "description": "",
+        "created_by": null,
+        "created_date": "2015-03-21",
+        "slug": "twitter",
+        "updated_by": null
+    },
+    "model": "pennypress.streamtype",
+    "pk": 2
+},
+{
+    "fields": {
+        "updated_date": "2015-03-22",
         "status": "live",
         "update_policy": "extend",
         "name": "kypost",
-        "last_bad_date": null,
+        "last_bad_date": "2015-03-22T04:05:43.743Z",
         "pub_policy": "auto",
         "notes": "",
         "stream_type": 1,
         "created_by": null,
-        "last_good_date": "2015-03-21T15:29:04.018Z",
+        "last_good_date": "2015-03-22T04:09:49.506Z",
         "created_date": "2015-03-21",
         "config": "http://www.wcpo.com/feeds/rssFeed?obfType=RSS_FEED&siteId=10015&categoryId=30944",
         "slug": "kypost",
@@ -34,6 +94,46 @@
 {
     "fields": {
         "updated_date": "2015-03-21",
+        "status": "live",
+        "update_policy": "extend",
+        "name": "faves",
+        "last_bad_date": "2015-03-22T03:48:09.421Z",
+        "pub_policy": "auto",
+        "notes": "",
+        "stream_type": 2,
+        "created_by": null,
+        "last_good_date": "2015-03-22T03:56:55.570Z",
+        "created_date": "2015-03-21",
+        "config": "",
+        "slug": "faves",
+        "updated_by": null
+    },
+    "model": "pennypress.stream",
+    "pk": 2
+},
+{
+    "fields": {
+        "updated_date": "2015-03-22",
+        "status": "live",
+        "update_policy": "extend",
+        "name": "River City News",
+        "last_bad_date": "2015-03-22T04:05:44.342Z",
+        "pub_policy": "auto",
+        "notes": "",
+        "stream_type": 1,
+        "created_by": null,
+        "last_good_date": "2015-03-22T04:09:50.020Z",
+        "created_date": "2015-03-21",
+        "config": "http://www.rcnky.com/rss.xml",
+        "slug": "rcnews",
+        "updated_by": null
+    },
+    "model": "pennypress.stream",
+    "pk": 3
+},
+{
+    "fields": {
+        "updated_date": "2015-03-21",
         "description": "html",
         "created_by": null,
         "created_date": "2015-03-21",
@@ -41,6 +141,40 @@
         "updated_by": null
     },
     "model": "pennypress.itemtype",
+    "pk": 1
+},
+{
+    "fields": {
+        "updated_date": "2015-03-21",
+        "description": "tweet",
+        "created_by": null,
+        "created_date": "2015-03-21",
+        "slug": "tweet",
+        "updated_by": null
+    },
+    "model": "pennypress.itemtype",
+    "pk": 2
+},
+{
+    "fields": {
+        "updated_date": "2015-03-22",
+        "subtitle": "",
+        "updated_by": null,
+        "title": "Local News",
+        "authors": [
+            1
+        ],
+        "created_by": null,
+        "streams": [
+            1,
+            3
+        ],
+        "created_date": "2015-03-22",
+        "pub_date": "2015-03-22",
+        "slug": "local",
+        "tags": []
+    },
+    "model": "pennypress.feed",
     "pk": 1
 }
 ]
