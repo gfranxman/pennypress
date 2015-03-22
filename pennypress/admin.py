@@ -33,31 +33,55 @@ class SportAdmin( BaseAuditable ):
 class EventTemplateAdmin( BaseAuditable ):
 class EventAdmin( BaseAuditable ):
 '''
-admin.site.register( Tag )
-admin.site.register( Section )
-admin.site.register( Story )
-admin.site.register( Photo )
-admin.site.register( Video )
-admin.site.register( Link )
-admin.site.register( Point )
-admin.site.register( Place )
-admin.site.register( City )
-admin.site.register( State )
-admin.site.register( County )
-admin.site.register( ZipCode )
-admin.site.register( Address )
-admin.site.register( Dateline )
-admin.site.register( Organization )
-admin.site.register( Park )
-admin.site.register( Church )
-admin.site.register( PollingStation )
-admin.site.register( Sport )
-admin.site.register( EventType )
-admin.site.register( EventTemplate )
-admin.site.register( Event )
-admin.site.register( StreamType )
-admin.site.register( Stream )
-admin.site.register( Item )
-admin.site.register( Feed )
-admin.site.register( FeedItem )
+'''
+class Photo( BasePublishable ):
+    class Story( BasePublishable ):
+    class Video( BasePublishable ):
+    class Item( BasePublishable ):
+    class Feed( BasePublishable ):
+'''
+class AuditAdmin(admin.ModelAdmin):
+    date_hierarchy = 'created_date'
+    save_on_top = True # doesnt seem to work
+    readonly_fields = ("created_date","updated_date",)
+
+class PublishableAdmin( AuditAdmin ):
+    date_hierarchy = 'pub_date'
+    search_fields = ( 'title', 'subtitle', 'slug', 'tags__slug', 'authors__email', 'authors__username', 'authors__last_name' )
+
+#class ProductAdmin(AuditAdmin):
+#    list_display = ('name', 'sku', 'application','for_sale', 'family', 'payment_system', 'renewal_frequency'  )
+#    list_filter = ( 'for_sale', 'application', 'family', 'payment_system__enabled', 'renewal_frequency' )
+#    search_fields = ( 'name', 'application__name', 'application__app_id', 'sku' )
+#    
+#admin.site.register(Product, ProductAdmin)
+
+
+admin.site.register( Tag, AuditAdmin )
+admin.site.register( Section, AuditAdmin )
+admin.site.register( Story, PublishableAdmin )
+admin.site.register( Photo, PublishableAdmin )
+admin.site.register( Video, PublishableAdmin )
+admin.site.register( Link, AuditAdmin )
+admin.site.register( Point, AuditAdmin )
+admin.site.register( Place, AuditAdmin )
+admin.site.register( City, AuditAdmin )
+admin.site.register( State, AuditAdmin )
+admin.site.register( County, AuditAdmin )
+admin.site.register( ZipCode, AuditAdmin )
+admin.site.register( Address, AuditAdmin )
+admin.site.register( Dateline, AuditAdmin )
+admin.site.register( Organization, AuditAdmin )
+admin.site.register( Park, AuditAdmin )
+admin.site.register( Church, AuditAdmin )
+admin.site.register( PollingStation, AuditAdmin )
+admin.site.register( Sport, AuditAdmin )
+admin.site.register( EventType, AuditAdmin )
+admin.site.register( EventTemplate, AuditAdmin )
+admin.site.register( Event, AuditAdmin )
+admin.site.register( StreamType, AuditAdmin )
+admin.site.register( Stream, AuditAdmin )
+admin.site.register( Item, PublishableAdmin )
+admin.site.register( Feed, PublishableAdmin )
+admin.site.register( FeedItem, AuditAdmin )
 

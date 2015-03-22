@@ -50,10 +50,10 @@ person
 class BaseAuditable( models.Model ):
     # https://docs.djangoproject.com/en/1.7/topics/db/models/#be-careful-with-related-name
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name="%(app_label)s_%(class)s_creator")
-    created_date = models.DateField( auto_now_add=True)
+    created_date = models.DateTimeField( auto_now_add=True)
 
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name="%(app_label)s_%(class)s_updater")
-    updated_date = models.DateField( auto_now=True)
+    updated_date = models.DateTimeField( auto_now=True)
 
     class Meta:
             abstract = True
@@ -125,7 +125,7 @@ class Section( BaseAuditable ):
 
 class BasePublishable( BaseAuditable ):
     abstract = True
-    pub_date = models.DateField()
+    pub_date = models.DateTimeField()
 
     title = models.CharField( max_length=100 )
     slug = models.SlugField(unique_for_date='pub_date', max_length=100) 
@@ -578,6 +578,9 @@ class ItemType( BaseAuditable ): # for parsing the item body: html, markdown, li
     slug = models.SlugField()
     description = models.TextField(null=True, blank=True )
 
+    def __unicode__(self):
+        return self.slug
+
 
 
 class Item( BasePublishable ):
@@ -589,10 +592,20 @@ class Item( BasePublishable ):
     link = models.URLField(null=True, blank=True )
     status = models.CharField( max_length=10, choices=(('show','Show'),('hide','Hide')), null=True, blank=True, default="show" )
 
+    class Meta:
+        ordering = [ '-pub_date', ]
+
+    def __unicode__(self):
+        return self.title
+
 
 
 class Feed( BasePublishable ):
     streams = models.ManyToManyField( Stream, null=True, blank=True )
+
+    def __unicode__(self):
+        return self.title
+
 
     def update_streams(self):
         for stream in self.streams.all():
@@ -602,12 +615,19 @@ class Feed( BasePublishable ):
     def visible_feeditems(self):
         return self.feeditem_set.filter(status='show')
 
+
+
 class FeedItem( BaseAuditable ):
     feed = models.ForeignKey( Feed )
     sort_key = models.DecimalField( max_digits=10+28, decimal_places=28 ) # really precise because the client will be dividing these down for sorting.
     item = models.ForeignKey( Item )
     status = models.CharField( max_length=10, choices=(('show','Show'),('hide','Hide')), null=True, blank=True, default="show" )
+    #style = # md, json, fulltexthtml, summaryhtml, text, nolinks, bigbox, imageonly, imageandlink, etc
 
     class Meta:
         #unique_together= ( ('feed', 'sort_key'), )
-        ordering = [ 'feed', '-sort_key' ]
+        ordering = [ '-sort_key' ]
+
+
+    def __unicode__(self):
+        return "{t} {sk} {status}".format(t=self.item.title, sk=self.sort_key, status=self.status)
