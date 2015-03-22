@@ -111,6 +111,9 @@
                 <h2> Feed Items </h2>
                 <ul class="connected list no2 feed-items ui-sortable">
                     <li class="highlight drop-target">Right Now</li>
+                    {% for feed_item in feed.feeditem_set.all %}
+                    <li id="{{feed_item.item.id}}">{{ feed_item.item.title }}</li>
+                    {% endfor %}
                 </ul>
             </div>
         </div>
