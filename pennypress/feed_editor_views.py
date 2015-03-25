@@ -59,7 +59,7 @@ def add_streamitem_to_feed( request, feed_slug ):
         feed = Feed.objects.get( slug=feed_slug )
         streamitem = Item.objects.get( id=streamitem_id )
 
-        feeditem, is_new = FeedItem.objects.get_or_create( feed=feed, item=streamitem )
+        feeditem, is_new = FeedItem.objects.get_or_create( feed=feed, item=streamitem, defaults={'sort_key':sort_key} )
         feeditem.status = 'show'
         feeditem.sort_key = sort_key
         feeditem.save()
